@@ -37,7 +37,13 @@ function App() {
       {userData && (
         <div>
           <h2>User Info</h2>
-          <pre>{JSON.stringify(userData, null, 2)}</pre>
+          <p>
+            <strong>Username: </strong> {userData["gameName"]}#
+            {userData["tagLine"]}
+          </p>
+          <p>
+            <strong>Player UUID: </strong> {userData["puuid"]}
+          </p>
         </div>
       )}
     </div>

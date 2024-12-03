@@ -26,9 +26,12 @@ app.get("/api/user/:gameName/:tagLine", async (req, res) => {
 
   try {
     const searchResponse = await axios.get(
-      "https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/BrandinoGames/NA1",
+      "https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/" +
+        gameName +
+        "/" +
+        tagLine,
       {
-        headers: { "X-Riot-Token": RIOT_API_KEY }, // Replace with your actual API key
+        headers: { "X-Riot-Token": RIOT_API_KEY },
       }
     );
     const userData = searchResponse.data;
