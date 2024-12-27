@@ -1,24 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 function App() {
-  const [gameName, setGameName] = useState("");
-  const [tagLine, setTagLine] = useState("");
+  const [gameNameInput, setGameNameInput] = useState("");
+  const [tagLineInput, setTagLineInput] = useState("");
   const [userData, setUserData] = useState(null);
   const [matchList, setMatchList] = useState(null);
   const [currMatchId, setCurrMatchId] = useState("");
   const [matchInfo, setMatchInfo] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchUserData = async () => {
+  const fetchUserInfo = async (gameName: string, tagLine: string) => {
     try {
       const response = await axios.get(
         "http://localhost:3001/api/userInfo/" + gameName + "/" + tagLine
       );
       setUserData(response.data);
-      fetchMatchList(response.data["puuid"]);
-    } catch (error) {
-      console.error("There was an error!", error);
-      // Optionally handle error
+      return response.data;
+    } catch (err) {
+      setError("Failed to fetch user data");
+      console.error(err);
     }
   };
 
@@ -29,10 +30,10 @@ function App() {
       );
       setMatchList(response.data);
       setCurrMatchId(response.data[0]);
-      fetchMatchInfo(response.data[0]);
-    } catch (error) {
-      console.error("There was an error!", error);
-      // Optionally handle error
+      return response.data;
+    } catch (err) {
+      setError("Failed to fetch match list");
+      console.error(err);
     }
   };
 
@@ -42,9 +43,29 @@ function App() {
         "http://localhost:3001/api/matchInfo/" + matchId
       );
       setMatchInfo(response.data);
-    } catch (error) {
-      console.error("There was an error!", error);
-      // Optionally handle error
+    } catch (err) {
+      setError("Failed to fetch match info");
+      console.error(err);
+    }
+  };
+
+  const handleFetchUserClick = async () => {
+    setError(null);
+
+    try {
+      // Fetch user info
+      const userInfo = await fetchUserInfo(gameNameInput, tagLineInput);
+      if (!userInfo) return;
+
+      // Fetch match list with userInfo.puuid
+      const matchList = await fetchMatchList(userInfo.puuid);
+      if (!matchList || matchList.length === 0) return;
+
+      // Fetch match info with the first match ID
+      await fetchMatchInfo(matchList[0]);
+    } catch (err) {
+      setError("Failed to fetch data");
+      console.error(err);
     }
   };
 
@@ -53,16 +74,18 @@ function App() {
       <input
         type="text"
         placeholder="Enter Game Name"
-        value={gameName}
-        onChange={(e) => setGameName(e.target.value)}
+        value={gameNameInput}
+        onChange={(e) => setGameNameInput(e.target.value)}
       />
       <input
         type="text"
         placeholder="Enter Tagline"
-        value={tagLine}
-        onChange={(e) => setTagLine(e.target.value)}
+        value={tagLineInput}
+        onChange={(e) => setTagLineInput(e.target.value)}
       />
-      <button onClick={fetchUserData}>Fetch User</button>
+      <button onClick={handleFetchUserClick}>Fetch User</button>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
       {userData && matchInfo && (
         <div>
@@ -79,7 +102,11 @@ function App() {
           </p>
           <p>
             <strong>Most Recent Match Info: </strong>{" "}
-            {JSON.stringify(matchInfo["metadata"]["participants"], null, 2)}
+            {JSON.stringify(
+              matchInfo["info"]["participants"][9]["championName"],
+              null,
+              2
+            )}
           </p>
         </div>
       )}
