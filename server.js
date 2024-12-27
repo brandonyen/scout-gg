@@ -53,8 +53,8 @@ app.get("/api/userInfo/:gameName/:tagLine", async (req, res) => {
   }
 });
 
-app.get("/api/matchList/:puuid", async (req, res) => {
-  const { puuid } = req.params;
+app.get("/api/matchList/:puuid/:count", async (req, res) => {
+  const { puuid, count } = req.params;
 
   if (!puuid) {
     return res
@@ -66,7 +66,8 @@ app.get("/api/matchList/:puuid", async (req, res) => {
     const searchResponse = await axios.get(
       "https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/" +
         puuid +
-        "/ids?count=5",
+        "/ids?count=" +
+        count,
       {
         headers: { "X-Riot-Token": RIOT_API_KEY },
       }

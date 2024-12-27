@@ -5,8 +5,7 @@ function App() {
   const [gameNameInput, setGameNameInput] = useState("");
   const [tagLineInput, setTagLineInput] = useState("");
   const [userData, setUserData] = useState(null);
-  const [matchList, setMatchList] = useState(null);
-  const [currMatchId, setCurrMatchId] = useState("");
+  const [matchList, setMatchList] = useState([]);
   const [matchInfo, setMatchInfo] = useState(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,13 +22,12 @@ function App() {
     }
   };
 
-  const fetchMatchList = async (puuid: string) => {
+  const fetchMatchList = async (puuid: string, count: string) => {
     try {
       const response = await axios.get(
-        "http://localhost:3001/api/matchList/" + puuid
+        "http://localhost:3001/api/matchList/" + puuid + "/" + count
       );
       setMatchList(response.data);
-      setCurrMatchId(response.data[0]);
       return response.data;
     } catch (err) {
       setError("Failed to fetch match list");
@@ -43,6 +41,19 @@ function App() {
         "http://localhost:3001/api/matchInfo/" + matchId
       );
       setMatchInfo(response.data);
+      return response.data;
+    } catch (err) {
+      setError("Failed to fetch match info");
+      console.error(err);
+    }
+  };
+
+  const fetchUserInfoPUUID = async (puuid: string) => {
+    try {
+      const response = await axios.get(
+        "http://localhost:3001/api/userInfoPUUID/" + puuid
+      );
+      setMatchInfo(response.data);
     } catch (err) {
       setError("Failed to fetch match info");
       console.error(err);
@@ -53,16 +64,11 @@ function App() {
     setError(null);
 
     try {
-      // Fetch user info
       const userInfo = await fetchUserInfo(gameNameInput, tagLineInput);
       if (!userInfo) return;
 
-      // Fetch match list with userInfo.puuid
-      const matchList = await fetchMatchList(userInfo.puuid);
+      const matchList = await fetchMatchList(userInfo.puuid, "5");
       if (!matchList || matchList.length === 0) return;
-
-      // Fetch match info with the first match ID
-      await fetchMatchInfo(matchList[0]);
     } catch (err) {
       setError("Failed to fetch data");
       console.error(err);
@@ -87,7 +93,7 @@ function App() {
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {userData && matchInfo && (
+      {userData && (
         <div>
           <h2>User Info</h2>
           <p>
@@ -97,17 +103,20 @@ function App() {
           <p>
             <strong>Player UUID: </strong> {userData["puuid"]}
           </p>
-          <p>
-            <strong>Most Recent Match ID: </strong> {currMatchId}
-          </p>
-          <p>
-            <strong>Most Recent Match Info: </strong>{" "}
-            {JSON.stringify(
-              matchInfo["info"]["participants"][9]["championName"],
-              null,
-              2
-            )}
-          </p>
+        </div>
+      )}
+
+      {matchList.length > 0 && (
+        <div>
+          <h2>Match List</h2>
+          {matchList.map((matchId, index) => (
+            <div key={index}>
+              <h3>Match {index + 1}</h3>
+              <p>
+                <strong>Match ID: </strong> {matchId}
+              </p>
+            </div>
+          ))}
         </div>
       )}
     </div>
