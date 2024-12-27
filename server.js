@@ -125,7 +125,7 @@ app.get("/api/matchInfo/:matchId", async (req, res) => {
 });
 
 app.get("/api/userInfoPUUID/:puuid", async (req, res) => {
-  const { puuid } = req.params.puuid;
+  const { puuid } = req.params;
 
   if (!puuid) {
     return res.status(400).json({ error: "Player UUID is required" });
@@ -133,7 +133,41 @@ app.get("/api/userInfoPUUID/:puuid", async (req, res) => {
 
   try {
     const searchResponse = await axios.get(
-      "https://americas.api.riotgames.com/riot/account/v1/accounts/by-puuid/" +
+      "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/" +
+        puuid,
+      {
+        headers: { "X-Riot-Token": RIOT_API_KEY },
+      }
+    );
+    const userData = searchResponse.data;
+    res.json(userData);
+  } catch (error) {
+    if (error.response) {
+      console.error("Riot API Error:", error.response.data); // Log full response data
+      res.status(500).json({
+        error: "Riot API responded with an error",
+        details: error.response.data,
+      });
+    } else {
+      console.error("Error in Axios request:", error.message); // Log network or other issues
+      res.status(500).json({
+        error: "Failed to fetch user data from Riot API",
+        details: error.message,
+      });
+    }
+  }
+});
+
+app.get("/api/summonerInfo/:puuid", async (req, res) => {
+  const { puuid } = req.params;
+
+  if (!puuid) {
+    return res.status(400).json({ error: "Player UUID is required" });
+  }
+
+  try {
+    const searchResponse = await axios.get(
+      "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/" +
         puuid,
       {
         headers: { "X-Riot-Token": RIOT_API_KEY },

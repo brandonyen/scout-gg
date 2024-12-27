@@ -4,17 +4,23 @@ import axios from "axios";
 function App() {
   const [gameNameInput, setGameNameInput] = useState("");
   const [tagLineInput, setTagLineInput] = useState("");
-  const [userData, setUserData] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
+  const [summonerInfo, setSummonerInfo] = useState(null);
   const [matchList, setMatchList] = useState([]);
-  const [matchInfo, setMatchInfo] = useState(null);
   const [error, setError] = useState<string | null>(null);
+
+  const summonerIconStyle: React.CSSProperties = {
+    width: "80px",
+    height: "80px",
+    marginRight: "20px",
+  };
 
   const fetchUserInfo = async (gameName: string, tagLine: string) => {
     try {
       const response = await axios.get(
         "http://localhost:3001/api/userInfo/" + gameName + "/" + tagLine
       );
-      setUserData(response.data);
+      setUserInfo(response.data);
       return response.data;
     } catch (err) {
       setError("Failed to fetch user data");
@@ -40,7 +46,6 @@ function App() {
       const response = await axios.get(
         "http://localhost:3001/api/matchInfo/" + matchId
       );
-      setMatchInfo(response.data);
       return response.data;
     } catch (err) {
       setError("Failed to fetch match info");
@@ -53,9 +58,22 @@ function App() {
       const response = await axios.get(
         "http://localhost:3001/api/userInfoPUUID/" + puuid
       );
-      setMatchInfo(response.data);
+      return response.data;
     } catch (err) {
-      setError("Failed to fetch match info");
+      setError("Failed to fetch user info");
+      console.error(err);
+    }
+  };
+
+  const fetchSummonerInfo = async (puuid: string) => {
+    try {
+      const response = await axios.get(
+        "http://localhost:3001/api/summonerInfo/" + puuid
+      );
+      setSummonerInfo(response.data);
+      return response.data;
+    } catch (err) {
+      setError("Failed to fetch summoner info");
       console.error(err);
     }
   };
@@ -67,6 +85,7 @@ function App() {
       const userInfo = await fetchUserInfo(gameNameInput, tagLineInput);
       if (!userInfo) return;
 
+      await fetchSummonerInfo(userInfo.puuid);
       const matchList = await fetchMatchList(userInfo.puuid, "5");
       if (!matchList || matchList.length === 0) return;
     } catch (err) {
@@ -90,19 +109,31 @@ function App() {
         onChange={(e) => setTagLineInput(e.target.value)}
       />
       <button onClick={handleFetchUserClick}>Fetch User</button>
+      <div>
+        <h2>User Info</h2>
+      </div>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {userData && (
-        <div>
-          <h2>User Info</h2>
-          <p>
-            <strong>Username: </strong> {userData["gameName"]}#
-            {userData["tagLine"]}
-          </p>
-          <p>
-            <strong>Player UUID: </strong> {userData["puuid"]}
-          </p>
+      {userInfo && summonerInfo && (
+        <div style={{ display: "flex" }}>
+          <img
+            src={
+              "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/" +
+              summonerInfo["profileIconId"] +
+              ".png"
+            }
+            style={summonerIconStyle}
+            alt="Summoner Icon"
+          />
+          <div>
+            <h3>
+              {userInfo["gameName"]}#{userInfo["tagLine"]}
+            </h3>
+            <p>
+              <strong>Summoner Level: </strong> {summonerInfo["summonerLevel"]}
+            </p>
+          </div>
         </div>
       )}
 
