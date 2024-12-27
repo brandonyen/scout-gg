@@ -1,12 +1,29 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+interface matchInfo {
+  gameType: string;
+  winner: string;
+  blueSummoners: summonerInfo[];
+  redSummoners: summonerInfo[];
+}
+
+interface summonerInfo {
+  gameName: string;
+  tagLine: string;
+  champion: string;
+  kills: bigint;
+  deaths: bigint;
+  assists: bigint;
+}
+
 function App() {
   const [gameNameInput, setGameNameInput] = useState("");
   const [tagLineInput, setTagLineInput] = useState("");
-  const [userInfo, setUserInfo] = useState(null);
-  const [summonerInfo, setSummonerInfo] = useState(null);
-  const [matchList, setMatchList] = useState([]);
+  const [currentUserInfo, setCurrentUserInfo] = useState(null);
+  const [currentSummonerInfo, setCurrentSummonerInfo] = useState(null);
+  const [matchList, setMatchList] = useState<string[]>([]);
+  const [matchInfoList, setMatchInfoList] = useState<matchInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const summonerIconStyle: React.CSSProperties = {
@@ -20,7 +37,7 @@ function App() {
       const response = await axios.get(
         "http://localhost:3001/api/userInfo/" + gameName + "/" + tagLine
       );
-      setUserInfo(response.data);
+      setCurrentUserInfo(response.data);
       return response.data;
     } catch (err) {
       setError("Failed to fetch user data");
@@ -53,24 +70,12 @@ function App() {
     }
   };
 
-  const fetchUserInfoPUUID = async (puuid: string) => {
-    try {
-      const response = await axios.get(
-        "http://localhost:3001/api/userInfoPUUID/" + puuid
-      );
-      return response.data;
-    } catch (err) {
-      setError("Failed to fetch user info");
-      console.error(err);
-    }
-  };
-
   const fetchSummonerInfo = async (puuid: string) => {
     try {
       const response = await axios.get(
         "http://localhost:3001/api/summonerInfo/" + puuid
       );
-      setSummonerInfo(response.data);
+      setCurrentSummonerInfo(response.data);
       return response.data;
     } catch (err) {
       setError("Failed to fetch summoner info");
@@ -86,8 +91,58 @@ function App() {
       if (!userInfo) return;
 
       await fetchSummonerInfo(userInfo.puuid);
-      const matchList = await fetchMatchList(userInfo.puuid, "5");
+      const matchList = await fetchMatchList(userInfo.puuid, "2");
       if (!matchList || matchList.length === 0) return;
+
+      const matchDetailsList = await Promise.all(
+        matchList.map(async (matchId) => {
+          const details = await fetchMatchInfo(matchId);
+          return details;
+        })
+      );
+
+      if (matchDetailsList.length == 0) return;
+
+      const matchInfoListTrimmed: matchInfo[] = [];
+      matchDetailsList.forEach((matchDetails) => {
+        let winningSide: string;
+
+        if (matchDetails["info"]["participants"][0]["win"]) {
+          winningSide = "Blue";
+        } else {
+          winningSide = "Red";
+        }
+
+        const blueSummonerInfo: summonerInfo[] = [];
+        const redSummonerInfo: summonerInfo[] = [];
+
+        matchDetails["info"]["participants"].forEach((participant, index) => {
+          const currentParticipant: summonerInfo = {
+            gameName: participant["riotIdGameName"],
+            tagLine: participant["riotIdTagline"],
+            champion: participant["championName"],
+            kills: participant["kills"],
+            deaths: participant["deaths"],
+            assists: participant["assists"],
+          };
+
+          if (index < 5) {
+            blueSummonerInfo.push(currentParticipant);
+          } else {
+            redSummonerInfo.push(currentParticipant);
+          }
+        });
+
+        const matchInfoTrimmed: matchInfo = {
+          gameType: matchDetails["info"]["gameMode"],
+          winner: winningSide,
+          blueSummoners: blueSummonerInfo,
+          redSummoners: redSummonerInfo,
+        };
+        matchInfoListTrimmed.push(matchInfoTrimmed);
+      });
+
+      setMatchInfoList(matchInfoListTrimmed);
     } catch (err) {
       setError("Failed to fetch data");
       console.error(err);
@@ -109,30 +164,33 @@ function App() {
         onChange={(e) => setTagLineInput(e.target.value)}
       />
       <button onClick={handleFetchUserClick}>Fetch User</button>
-      <div>
-        <h2>User Info</h2>
-      </div>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {userInfo && summonerInfo && (
-        <div style={{ display: "flex" }}>
-          <img
-            src={
-              "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/" +
-              summonerInfo["profileIconId"] +
-              ".png"
-            }
-            style={summonerIconStyle}
-            alt="Summoner Icon"
-          />
+      {currentUserInfo && currentSummonerInfo && (
+        <div>
           <div>
-            <h3>
-              {userInfo["gameName"]}#{userInfo["tagLine"]}
-            </h3>
-            <p>
-              <strong>Summoner Level: </strong> {summonerInfo["summonerLevel"]}
-            </p>
+            <h2>User Info</h2>
+          </div>
+          <div style={{ display: "flex" }}>
+            <img
+              src={
+                "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/" +
+                currentSummonerInfo["profileIconId"] +
+                ".png"
+              }
+              style={summonerIconStyle}
+              alt="Summoner Icon"
+            />
+            <div>
+              <h3>
+                {currentUserInfo["gameName"]}#{currentUserInfo["tagLine"]}
+              </h3>
+              <p>
+                <strong>Summoner Level: </strong>{" "}
+                {currentSummonerInfo["summonerLevel"]}
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -140,14 +198,17 @@ function App() {
       {matchList.length > 0 && (
         <div>
           <h2>Match List</h2>
-          {matchList.map((matchId, index) => (
-            <div key={index}>
-              <h3>Match {index + 1}</h3>
-              <p>
-                <strong>Match ID: </strong> {matchId}
-              </p>
-            </div>
-          ))}
+          {matchList.map((matchId, index) => {
+            return (
+              <div key={index}>
+                <h3>Match {index + 1}</h3>
+                <p>
+                  <strong>Match ID: </strong> {matchId}
+                  {JSON.stringify(matchInfoList[index], null, 2)}
+                </p>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
