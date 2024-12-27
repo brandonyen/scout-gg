@@ -91,7 +91,7 @@ function App() {
       if (!userInfo) return;
 
       await fetchSummonerInfo(userInfo.puuid);
-      const matchList = await fetchMatchList(userInfo.puuid, "2");
+      const matchList = await fetchMatchList(userInfo.puuid, "5");
       if (!matchList || matchList.length === 0) return;
 
       const matchDetailsList = await Promise.all(
@@ -106,11 +106,35 @@ function App() {
       const matchInfoListTrimmed: matchInfo[] = [];
       matchDetailsList.forEach((matchDetails) => {
         let winningSide: string;
+        let queueMode: string;
 
         if (matchDetails["info"]["participants"][0]["win"]) {
           winningSide = "Blue";
         } else {
           winningSide = "Red";
+        }
+
+        const queueId = matchDetails["info"]["queueId"];
+
+        switch (queueId) {
+          case 400:
+            queueMode = "Normal Draft";
+            break;
+          case 420:
+            queueMode = "Ranked Solo/Duo";
+            break;
+          case 440:
+            queueMode = "Ranked Flex";
+            break;
+          case 450:
+            queueMode = "ARAM";
+            break;
+          case 490:
+            queueMode = "Quickplay";
+            break;
+          default:
+            queueMode = "Custom or RGM";
+            break;
         }
 
         const blueSummonerInfo: summonerInfo[] = [];
@@ -134,7 +158,7 @@ function App() {
         });
 
         const matchInfoTrimmed: matchInfo = {
-          gameType: matchDetails["info"]["gameMode"],
+          gameType: queueMode,
           winner: winningSide,
           blueSummoners: blueSummonerInfo,
           redSummoners: redSummonerInfo,
