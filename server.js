@@ -14,7 +14,6 @@ app.use(
   })
 );
 
-// Endpoint to search for user by gameName and tagLine
 app.get("/api/userInfo/:gameName/:tagLine", async (req, res) => {
   const { gameName, tagLine } = req.params;
 
@@ -38,13 +37,13 @@ app.get("/api/userInfo/:gameName/:tagLine", async (req, res) => {
     res.json(userData);
   } catch (error) {
     if (error.response) {
-      console.error("Riot API Error:", error.response.data); // Log full response data
+      console.error("Riot API Error:", error.response.data);
       res.status(500).json({
         error: "Riot API responded with an error",
         details: error.response.data,
       });
     } else {
-      console.error("Error in Axios request:", error.message); // Log network or other issues
+      console.error("Error in Axios request:", error.message);
       res.status(500).json({
         error: "Failed to fetch user data from Riot API",
         details: error.message,
@@ -76,13 +75,13 @@ app.get("/api/matchList/:puuid/:count", async (req, res) => {
     res.json(userData);
   } catch (error) {
     if (error.response) {
-      console.error("Riot API Error:", error.response.data); // Log full response data
+      console.error("Riot API Error:", error.response.data);
       res.status(500).json({
         error: "Riot API responded with an error",
         details: error.response.data,
       });
     } else {
-      console.error("Error in Axios request:", error.message); // Log network or other issues
+      console.error("Error in Axios request:", error.message);
       res.status(500).json({
         error: "Failed to fetch user data from Riot API",
         details: error.message,
@@ -109,13 +108,13 @@ app.get("/api/matchInfo/:matchId", async (req, res) => {
     res.json(userData);
   } catch (error) {
     if (error.response) {
-      console.error("Riot API Error:", error.response.data); // Log full response data
+      console.error("Riot API Error:", error.response.data);
       res.status(500).json({
         error: "Riot API responded with an error",
         details: error.response.data,
       });
     } else {
-      console.error("Error in Axios request:", error.message); // Log network or other issues
+      console.error("Error in Axios request:", error.message);
       res.status(500).json({
         error: "Failed to fetch user data from Riot API",
         details: error.message,
@@ -143,13 +142,13 @@ app.get("/api/summonerInfo/:puuid", async (req, res) => {
     res.json(userData);
   } catch (error) {
     if (error.response) {
-      console.error("Riot API Error:", error.response.data); // Log full response data
+      console.error("Riot API Error:", error.response.data);
       res.status(500).json({
         error: "Riot API responded with an error",
         details: error.response.data,
       });
     } else {
-      console.error("Error in Axios request:", error.message); // Log network or other issues
+      console.error("Error in Axios request:", error.message);
       res.status(500).json({
         error: "Failed to fetch user data from Riot API",
         details: error.message,
@@ -177,13 +176,13 @@ app.get("/api/rankedInfo/:summonerId", async (req, res) => {
     res.json(userData);
   } catch (error) {
     if (error.response) {
-      console.error("Riot API Error:", error.response.data); // Log full response data
+      console.error("Riot API Error:", error.response.data);
       res.status(500).json({
         error: "Riot API responded with an error",
         details: error.response.data,
       });
     } else {
-      console.error("Error in Axios request:", error.message); // Log network or other issues
+      console.error("Error in Axios request:", error.message);
       res.status(500).json({
         error: "Failed to fetch user data from Riot API",
         details: error.message,

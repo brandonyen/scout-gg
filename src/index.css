@@ -1,9 +1,7 @@
 .winner {
   background-color: lightblue;
-  width: max-content;
 }
 
 .loser {
   background-color: lightcoral;
-  width: max-content;
 }
