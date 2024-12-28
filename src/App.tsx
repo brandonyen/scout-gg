@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import "./index.css";
 
 interface matchInfo {
   gameType: string;
@@ -30,6 +31,12 @@ function App() {
     width: "80px",
     height: "80px",
     marginRight: "20px",
+  };
+
+  const championIconStyle: React.CSSProperties = {
+    width: "60px",
+    height: "60px",
+    marginRight: "10px",
   };
 
   const fetchUserInfo = async (gameName: string, tagLine: string) => {
@@ -95,7 +102,7 @@ function App() {
       if (!matchList || matchList.length === 0) return;
 
       const matchDetailsList = await Promise.all(
-        matchList.map(async (matchId) => {
+        matchList.map(async (matchId: string) => {
           const details = await fetchMatchInfo(matchId);
           return details;
         })
@@ -140,22 +147,24 @@ function App() {
         const blueSummonerInfo: summonerInfo[] = [];
         const redSummonerInfo: summonerInfo[] = [];
 
-        matchDetails["info"]["participants"].forEach((participant, index) => {
-          const currentParticipant: summonerInfo = {
-            gameName: participant["riotIdGameName"],
-            tagLine: participant["riotIdTagline"],
-            champion: participant["championName"],
-            kills: participant["kills"],
-            deaths: participant["deaths"],
-            assists: participant["assists"],
-          };
+        matchDetails["info"]["participants"].forEach(
+          (participant: any, index: bigint) => {
+            const currentParticipant: summonerInfo = {
+              gameName: participant["riotIdGameName"],
+              tagLine: participant["riotIdTagline"],
+              champion: participant["championName"],
+              kills: participant["kills"],
+              deaths: participant["deaths"],
+              assists: participant["assists"],
+            };
 
-          if (index < 5) {
-            blueSummonerInfo.push(currentParticipant);
-          } else {
-            redSummonerInfo.push(currentParticipant);
+            if (index < 5) {
+              blueSummonerInfo.push(currentParticipant);
+            } else {
+              redSummonerInfo.push(currentParticipant);
+            }
           }
-        });
+        );
 
         const matchInfoTrimmed: matchInfo = {
           gameType: queueMode,
@@ -219,17 +228,107 @@ function App() {
         </div>
       )}
 
-      {matchList.length > 0 && (
+      {matchInfoList.length > 0 && (
         <div>
           <h2>Match List</h2>
-          {matchList.map((matchId, index) => {
+          {matchInfoList.map((matchInfo, index) => {
             return (
               <div key={index}>
                 <h3>Match {index + 1}</h3>
-                <p>
-                  <strong>Match ID: </strong> {matchId}
-                  {JSON.stringify(matchInfoList[index], null, 2)}
-                </p>
+                <p>{matchInfo.gameType}</p>
+                <p>Winner: {matchInfo.winner}</p>
+                <div
+                  className={matchInfo.winner == "Blue" ? "winner" : "loser"}
+                  style={{
+                    display: "flex",
+                    padding: "20px",
+                    alignItems: "center",
+                  }}
+                >
+                  {matchInfo.winner == "Blue" ? (
+                    <p>Victory (Blue Team)</p>
+                  ) : (
+                    <p>Defeat (Blue Team)</p>
+                  )}
+                  {matchInfo.blueSummoners.map((blueSummoner) => {
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "5px",
+                          flexDirection: "row",
+                        }}
+                      >
+                        <img
+                          src={
+                            "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/" +
+                            blueSummoner.champion +
+                            ".png"
+                          }
+                          style={championIconStyle}
+                          alt="Champion Icon"
+                        />
+                        <div>
+                          <p>
+                            {blueSummoner.gameName}#{blueSummoner.tagLine}
+                          </p>
+                          <p>
+                            {blueSummoner.kills.toString()}/
+                            {blueSummoner.deaths.toString()}/
+                            {blueSummoner.assists.toString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div
+                  className={matchInfo.winner == "Red" ? "winner" : "loser"}
+                  style={{
+                    display: "flex",
+                    padding: "20px",
+                    alignItems: "center",
+                  }}
+                >
+                  {matchInfo.winner == "Red" ? (
+                    <p>Victory (Red Team)</p>
+                  ) : (
+                    <p>Defeat (Red Team)</p>
+                  )}
+                  {matchInfo.redSummoners.map((redSummoner) => {
+                    return (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "5px",
+                          flexDirection: "row",
+                        }}
+                      >
+                        <img
+                          src={
+                            "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/" +
+                            redSummoner.champion +
+                            ".png"
+                          }
+                          style={championIconStyle}
+                          alt="Champion Icon"
+                        />
+                        <div>
+                          <p>
+                            {redSummoner.gameName}#{redSummoner.tagLine}
+                          </p>
+                          <p>
+                            {redSummoner.kills.toString()}/
+                            {redSummoner.deaths.toString()}/
+                            {redSummoner.assists.toString()}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
