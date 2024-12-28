@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import "./index.css";
 
-interface matchInfo {
+interface MatchInfo {
   gameType: string;
   winner: string;
-  blueSummoners: summonerInfo[];
-  redSummoners: summonerInfo[];
+  blueSummoners: SummonerInfo[];
+  redSummoners: SummonerInfo[];
 }
 
-interface summonerInfo {
+interface SummonerInfo {
   gameName: string;
   tagLine: string;
   champion: string;
@@ -18,18 +18,27 @@ interface summonerInfo {
   assists: bigint;
 }
 
+interface RankedInfo {
+  tier: string;
+  rank: string;
+  points: bigint;
+}
+
 function App() {
   const [gameNameInput, setGameNameInput] = useState("");
   const [tagLineInput, setTagLineInput] = useState("");
   const [currentUserInfo, setCurrentUserInfo] = useState(null);
   const [currentSummonerInfo, setCurrentSummonerInfo] = useState(null);
+  const [currentRankedInfo, setCurrentRankedInfo] = useState<RankedInfo | null>(
+    null
+  );
   const [matchList, setMatchList] = useState<string[]>([]);
-  const [matchInfoList, setMatchInfoList] = useState<matchInfo[]>([]);
+  const [matchInfoList, setMatchInfoList] = useState<MatchInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const summonerIconStyle: React.CSSProperties = {
-    width: "80px",
-    height: "80px",
+    width: "100px",
+    height: "100px",
     marginRight: "20px",
   };
 
@@ -90,6 +99,29 @@ function App() {
     }
   };
 
+  const fetchSummonerRank = async (summonerId: string) => {
+    try {
+      const response = await axios.get(
+        "http://localhost:3001/api/rankedInfo/" + summonerId
+      );
+      setCurrentRankedInfo(null);
+      response.data.forEach((queueRank: any) => {
+        if (queueRank["queueType"] == "RANKED_SOLO_5x5") {
+          const playerRank: RankedInfo = {
+            tier: queueRank["tier"],
+            rank: queueRank["rank"],
+            points: queueRank["leaguePoints"],
+          };
+
+          setCurrentRankedInfo(playerRank);
+        }
+      });
+    } catch (err) {
+      setError("Failed to fetch ranked info");
+      console.error(err);
+    }
+  };
+
   const handleFetchUserClick = async () => {
     setError(null);
 
@@ -97,8 +129,11 @@ function App() {
       const userInfo = await fetchUserInfo(gameNameInput, tagLineInput);
       if (!userInfo) return;
 
-      await fetchSummonerInfo(userInfo.puuid);
-      const matchList = await fetchMatchList(userInfo.puuid, "5");
+      const summonerInfo = await fetchSummonerInfo(userInfo.puuid);
+      if (!summonerInfo) return;
+
+      await fetchSummonerRank(summonerInfo.id);
+      const matchList = await fetchMatchList(userInfo.puuid, "10");
       if (!matchList || matchList.length === 0) return;
 
       const matchDetailsList = await Promise.all(
@@ -110,7 +145,7 @@ function App() {
 
       if (matchDetailsList.length == 0) return;
 
-      const matchInfoListTrimmed: matchInfo[] = [];
+      const matchInfoListTrimmed: MatchInfo[] = [];
       matchDetailsList.forEach((matchDetails) => {
         let winningSide: string;
         let queueMode: string;
@@ -144,12 +179,12 @@ function App() {
             break;
         }
 
-        const blueSummonerInfo: summonerInfo[] = [];
-        const redSummonerInfo: summonerInfo[] = [];
+        const blueSummonerInfo: SummonerInfo[] = [];
+        const redSummonerInfo: SummonerInfo[] = [];
 
         matchDetails["info"]["participants"].forEach(
           (participant: any, index: bigint) => {
-            const currentParticipant: summonerInfo = {
+            const currentParticipant: SummonerInfo = {
               gameName: participant["riotIdGameName"],
               tagLine: participant["riotIdTagline"],
               champion: participant["championName"],
@@ -166,7 +201,7 @@ function App() {
           }
         );
 
-        const matchInfoTrimmed: matchInfo = {
+        const matchInfoTrimmed: MatchInfo = {
           gameType: queueMode,
           winner: winningSide,
           blueSummoners: blueSummonerInfo,
@@ -205,7 +240,7 @@ function App() {
           <div>
             <h2>User Info</h2>
           </div>
-          <div style={{ display: "flex" }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
             <img
               src={
                 "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/" +
@@ -223,6 +258,14 @@ function App() {
                 <strong>Summoner Level: </strong>{" "}
                 {currentSummonerInfo["summonerLevel"]}
               </p>
+              {currentRankedInfo ? (
+                <p>
+                  {currentRankedInfo.tier} {currentRankedInfo.rank}{" "}
+                  {currentRankedInfo.points.toString()}LP
+                </p>
+              ) : (
+                <p>There is no Ranked Solo/Duo information available.</p>
+              )}
             </div>
           </div>
         </div>
