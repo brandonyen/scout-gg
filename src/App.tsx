@@ -19,6 +19,7 @@ interface SummonerInfo {
 }
 
 interface RankedInfo {
+  type: string;
   tier: string;
   rank: string;
   points: bigint;
@@ -104,18 +105,32 @@ function App() {
       const response = await axios.get(
         "http://localhost:3001/api/rankedInfo/" + summonerId
       );
-      setCurrentRankedInfo(null);
+      let soloDuoRankedInfo: RankedInfo | null = null;
+      let flexRankedInfo: RankedInfo | null = null;
+
       response.data.forEach((queueRank: any) => {
         if (queueRank["queueType"] == "RANKED_SOLO_5x5") {
-          const playerRank: RankedInfo = {
+          soloDuoRankedInfo = {
+            type: "Ranked Solo/Duo",
             tier: queueRank["tier"],
             rank: queueRank["rank"],
             points: queueRank["leaguePoints"],
           };
-
-          setCurrentRankedInfo(playerRank);
+        } else if (queueRank["queueType"] == "RANKED_FLEX_SR") {
+          flexRankedInfo = {
+            type: "Ranked Flex",
+            tier: queueRank["tier"],
+            rank: queueRank["rank"],
+            points: queueRank["leaguePoints"],
+          };
         }
       });
+
+      if (soloDuoRankedInfo) {
+        setCurrentRankedInfo(soloDuoRankedInfo);
+      } else if (flexRankedInfo) {
+        setCurrentRankedInfo(flexRankedInfo);
+      }
     } catch (err) {
       setError("Failed to fetch ranked info");
       console.error(err);
@@ -124,6 +139,11 @@ function App() {
 
   const handleFetchUserClick = async () => {
     setError(null);
+    setCurrentUserInfo(null);
+    setCurrentSummonerInfo(null);
+    setCurrentRankedInfo(null);
+    setMatchList([]);
+    setMatchInfoList([]);
 
     try {
       const userInfo = await fetchUserInfo(gameNameInput, tagLineInput);
@@ -235,7 +255,7 @@ function App() {
 
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {currentUserInfo && currentSummonerInfo && (
+      {currentUserInfo && currentSummonerInfo && currentRankedInfo && (
         <div>
           <div>
             <h2>User Info</h2>
@@ -260,11 +280,12 @@ function App() {
               </p>
               {currentRankedInfo ? (
                 <p>
+                  <strong>{currentRankedInfo.type}: </strong>
                   {currentRankedInfo.tier} {currentRankedInfo.rank}{" "}
                   {currentRankedInfo.points.toString()}LP
                 </p>
               ) : (
-                <p>There is no Ranked Solo/Duo information available.</p>
+                <p>There is no Ranked information available.</p>
               )}
             </div>
           </div>
