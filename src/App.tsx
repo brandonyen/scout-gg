@@ -305,7 +305,6 @@ function App() {
               <div key={index}>
                 <h3>Match {index + 1}</h3>
                 <p>{matchInfo.gameType}</p>
-                <p>Winner: {matchInfo.winner}</p>
                 <div
                   style={{
                     width: "max-content",
