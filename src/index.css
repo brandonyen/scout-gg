@@ -1,7 +1,1 @@
-.winner {
-  background-color: lightblue;
-}
-
-.loser {
-  background-color: lightcoral;
-}
+@import "tailwindcss";

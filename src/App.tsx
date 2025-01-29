@@ -311,7 +311,9 @@ function App() {
                   }}
                 >
                   <div
-                    className={matchInfo.winner == "Blue" ? "winner" : "loser"}
+                    className={
+                      matchInfo.winner == "Blue" ? "bg-sky-200" : "bg-red-200"
+                    }
                     style={{
                       display: "flex",
                       padding: "20px",
@@ -357,7 +359,9 @@ function App() {
                     })}
                   </div>
                   <div
-                    className={matchInfo.winner == "Red" ? "winner" : "loser"}
+                    className={
+                      matchInfo.winner == "Red" ? "bg-sky-200" : "bg-red-200"
+                    }
                     style={{
                       display: "flex",
                       padding: "20px",
